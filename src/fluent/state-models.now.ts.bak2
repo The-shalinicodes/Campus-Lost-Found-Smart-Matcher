@@ -1,0 +1,494 @@
+import '@servicenow/sdk/global'
+import { StateModel, BusinessRule } from '@servicenow/sdk/core'
+
+// =============================================================================
+// LOST ITEM STATE MODEL
+// States: new -> searching -> matched -> claimed -> closed | expired
+// =============================================================================
+StateModel({
+    $id: Now.ID['lost_item_state_model'],
+    name: 'Lost Item Lifecycle',
+    table: 'x_1927922_campus_l_lost_item',
+    stateField: 'state',
+    states: {
+        new: {
+            $id: Now.ID['lost_state_new'],
+            label: 'New',
+            value: 'new',
+            sequence: 0,
+            initial: true,
+        },
+        searching: {
+            $id: Now.ID['lost_state_searching'],
+            label: 'Searching',
+            value: 'searching',
+            sequence: 1,
+        },
+        matched: {
+            $id: Now.ID['lost_state_matched'],
+            label: 'Matched',
+            value: 'matched',
+            sequence: 2,
+        },
+        claimed: {
+            $id: Now.ID['lost_state_claimed'],
+            label: 'Claimed',
+            value: 'claimed',
+            sequence: 3,
+        },
+        closed: {
+            $id: Now.ID['lost_state_closed'],
+            label: 'Closed',
+            value: 'closed',
+            sequence: 4,
+        },
+        expired: {
+            $id: Now.ID['lost_state_expired'],
+            label: 'Expired',
+            value: 'expired',
+            sequence: 5,
+        },
+    },
+    transitions: [
+        { $id: Now.ID['lost_new_to_searching'], from: 'new', to: 'searching' },
+        { $id: Now.ID['lost_new_to_closed'], from: 'new', to: 'closed' },
+        { $id: Now.ID['lost_new_to_expired'], from: 'new', to: 'expired' },
+        { $id: Now.ID['lost_searching_to_matched'], from: 'searching', to: 'matched' },
+        { $id: Now.ID['lost_searching_to_closed'], from: 'searching', to: 'closed' },
+        { $id: Now.ID['lost_searching_to_expired'], from: 'searching', to: 'expired' },
+        { $id: Now.ID['lost_matched_to_claimed'], from: 'matched', to: 'claimed' },
+        { $id: Now.ID['lost_matched_to_closed'], from: 'matched', to: 'closed' },
+        { $id: Now.ID['lost_claimed_to_closed'], from: 'claimed', to: 'closed' },
+    ],
+})
+
+// =============================================================================
+// FOUND ITEM STATE MODEL
+// States: received -> cataloged -> matched -> claimed | unclaimed -> disposed
+// =============================================================================
+StateModel({
+    $id: Now.ID['found_item_state_model'],
+    name: 'Found Item Lifecycle',
+    table: 'x_1927922_campus_l_found_item',
+    stateField: 'state',
+    states: {
+        received: {
+            $id: Now.ID['found_state_received'],
+            label: 'Received',
+            value: 'received',
+            sequence: 0,
+            initial: true,
+        },
+        cataloged: {
+            $id: Now.ID['found_state_cataloged'],
+            label: 'Cataloged',
+            value: 'cataloged',
+            sequence: 1,
+        },
+        matched: {
+            $id: Now.ID['found_state_matched'],
+            label: 'Matched',
+            value: 'matched',
+            sequence: 2,
+        },
+        claimed: {
+            $id: Now.ID['found_state_claimed'],
+            label: 'Claimed',
+            value: 'claimed',
+            sequence: 3,
+        },
+        unclaimed: {
+            $id: Now.ID['found_state_unclaimed'],
+            label: 'Unclaimed',
+            value: 'unclaimed',
+            sequence: 4,
+        },
+        disposed: {
+            $id: Now.ID['found_state_disposed'],
+            label: 'Disposed',
+            value: 'disposed',
+            sequence: 5,
+        },
+    },
+    transitions: [
+        { $id: Now.ID['found_received_to_cataloged'], from: 'received', to: 'cataloged' },
+        { $id: Now.ID['found_cataloged_to_matched'], from: 'cataloged', to: 'matched' },
+        { $id: Now.ID['found_cataloged_to_unclaimed'], from: 'cataloged', to: 'unclaimed' },
+        { $id: Now.ID['found_matched_to_claimed'], from: 'matched', to: 'claimed' },
+        { $id: Now.ID['found_matched_to_unclaimed'], from: 'matched', to: 'unclaimed' },
+        { $id: Now.ID['found_unclaimed_to_disposed'], from: 'unclaimed', to: 'disposed' },
+    ],
+})
+
+// =============================================================================
+// MATCH STATE MODEL
+// States: pending -> reviewing -> confirmed | rejected | expired
+// =============================================================================
+StateModel({
+    $id: Now.ID['match_state_model'],
+    name: 'Match Lifecycle',
+    table: 'x_1927922_campus_l_match',
+    stateField: 'state',
+    states: {
+        pending: {
+            $id: Now.ID['match_state_pending'],
+            label: 'Pending',
+            value: 'pending',
+            sequence: 0,
+            initial: true,
+        },
+        reviewing: {
+            $id: Now.ID['match_state_reviewing'],
+            label: 'Reviewing',
+            value: 'reviewing',
+            sequence: 1,
+        },
+        confirmed: {
+            $id: Now.ID['match_state_confirmed'],
+            label: 'Confirmed',
+            value: 'confirmed',
+            sequence: 2,
+        },
+        rejected: {
+            $id: Now.ID['match_state_rejected'],
+            label: 'Rejected',
+            value: 'rejected',
+            sequence: 3,
+        },
+        expired: {
+            $id: Now.ID['match_state_expired'],
+            label: 'Expired',
+            value: 'expired',
+            sequence: 4,
+        },
+    },
+    transitions: [
+        { $id: Now.ID['match_pending_to_reviewing'], from: 'pending', to: 'reviewing' },
+        { $id: Now.ID['match_pending_to_expired'], from: 'pending', to: 'expired' },
+        { $id: Now.ID['match_reviewing_to_confirmed'], from: 'reviewing', to: 'confirmed' },
+        { $id: Now.ID['match_reviewing_to_rejected'], from: 'reviewing', to: 'rejected' },
+    ],
+})
+
+// =============================================================================
+// CLAIM STATE MODEL
+// States: submitted -> verifying -> approved -> picked_up | denied | cancelled
+// =============================================================================
+StateModel({
+    $id: Now.ID['claim_state_model'],
+    name: 'Claim Lifecycle',
+    table: 'x_1927922_campus_l_claim',
+    stateField: 'state',
+    states: {
+        submitted: {
+            $id: Now.ID['claim_state_submitted'],
+            label: 'Submitted',
+            value: 'submitted',
+            sequence: 0,
+            initial: true,
+        },
+        verifying: {
+            $id: Now.ID['claim_state_verifying'],
+            label: 'Verifying',
+            value: 'verifying',
+            sequence: 1,
+        },
+        approved: {
+            $id: Now.ID['claim_state_approved'],
+            label: 'Approved',
+            value: 'approved',
+            sequence: 2,
+        },
+        denied: {
+            $id: Now.ID['claim_state_denied'],
+            label: 'Denied',
+            value: 'denied',
+            sequence: 3,
+        },
+        picked_up: {
+            $id: Now.ID['claim_state_picked_up'],
+            label: 'Picked Up',
+            value: 'picked_up',
+            sequence: 4,
+        },
+        cancelled: {
+            $id: Now.ID['claim_state_cancelled'],
+            label: 'Cancelled',
+            value: 'cancelled',
+            sequence: 5,
+        },
+    },
+    transitions: [
+        { $id: Now.ID['claim_submitted_to_verifying'], from: 'submitted', to: 'verifying' },
+        { $id: Now.ID['claim_submitted_to_cancelled'], from: 'submitted', to: 'cancelled' },
+        { $id: Now.ID['claim_verifying_to_approved'], from: 'verifying', to: 'approved' },
+        { $id: Now.ID['claim_verifying_to_denied'], from: 'verifying', to: 'denied' },
+        { $id: Now.ID['claim_approved_to_picked_up'], from: 'approved', to: 'picked_up' },
+    ],
+})
+
+// =============================================================================
+// STATE MODEL ASSIGNMENT BUSINESS RULES
+// Assign the appropriate state model to new records on insert
+// =============================================================================
+
+BusinessRule({
+    $id: Now.ID['assign_lost_item_model'],
+    name: 'Assign Lost Item State Model',
+    table: 'x_1927922_campus_l_lost_item',
+    when: 'before',
+    action: ['insert'],
+    filterCondition: 'modelISEMPTY',
+    script: `(function executeRule(current, previous) {
+    var modelGr = new GlideRecord('sttrm_model');
+    modelGr.addQuery('table_name', current.getTableName());
+    modelGr.addActiveQuery();
+    modelGr.orderBy('order');
+    modelGr.setLimit(1);
+    modelGr.query();
+    if (modelGr.next()) {
+        current.setValue('model', modelGr.getUniqueValue());
+    }
+})(current, previous);`,
+})
+
+BusinessRule({
+    $id: Now.ID['assign_found_item_model'],
+    name: 'Assign Found Item State Model',
+    table: 'x_1927922_campus_l_found_item',
+    when: 'before',
+    action: ['insert'],
+    filterCondition: 'modelISEMPTY',
+    script: `(function executeRule(current, previous) {
+    var modelGr = new GlideRecord('sttrm_model');
+    modelGr.addQuery('table_name', current.getTableName());
+    modelGr.addActiveQuery();
+    modelGr.orderBy('order');
+    modelGr.setLimit(1);
+    modelGr.query();
+    if (modelGr.next()) {
+        current.setValue('model', modelGr.getUniqueValue());
+    }
+})(current, previous);`,
+})
+
+BusinessRule({
+    $id: Now.ID['assign_match_model'],
+    name: 'Assign Match State Model',
+    table: 'x_1927922_campus_l_match',
+    when: 'before',
+    action: ['insert'],
+    filterCondition: 'modelISEMPTY',
+    script: `(function executeRule(current, previous) {
+    var modelGr = new GlideRecord('sttrm_model');
+    modelGr.addQuery('table_name', current.getTableName());
+    modelGr.addActiveQuery();
+    modelGr.orderBy('order');
+    modelGr.setLimit(1);
+    modelGr.query();
+    if (modelGr.next()) {
+        current.setValue('model', modelGr.getUniqueValue());
+    }
+})(current, previous);`,
+})
+
+BusinessRule({
+    $id: Now.ID['assign_claim_model'],
+    name: 'Assign Claim State Model',
+    table: 'x_1927922_campus_l_claim',
+    when: 'before',
+    action: ['insert'],
+    filterCondition: 'modelISEMPTY',
+    script: `(function executeRule(current, previous) {
+    var modelGr = new GlideRecord('sttrm_model');
+    modelGr.addQuery('table_name', current.getTableName());
+    modelGr.addActiveQuery();
+    modelGr.orderBy('order');
+    modelGr.setLimit(1);
+    modelGr.query();
+    if (modelGr.next()) {
+        current.setValue('model', modelGr.getUniqueValue());
+    }
+})(current, previous);`,
+})
+
+// =============================================================================
+// STATE MODEL ENFORCEMENT BUSINESS RULES
+// Enforce valid transitions on state field changes
+// =============================================================================
+
+BusinessRule({
+    $id: Now.ID['enforce_lost_item_transitions'],
+    name: 'Lost Item: Check State Transition',
+    table: 'x_1927922_campus_l_lost_item',
+    when: 'before',
+    action: ['update'],
+    filterCondition: 'stateVALCHANGES^EQ',
+    order: 50,
+    script: `(function executeRule(current, previous) {
+    if (!previous) return;
+
+    var modelGr = new GlideRecord('sttrm_model');
+    modelGr.addQuery('table_name', current.getTableName());
+    modelGr.addActiveQuery();
+    modelGr.orderBy('order');
+    modelGr.setLimit(1);
+    modelGr.query();
+    if (!modelGr.next()) return;
+
+    var stateField = modelGr.getValue('state_field');
+    var previousState = previous.getValue(stateField);
+    var currentState = current.getValue(stateField);
+    if (previousState === currentState) return;
+
+    var model = new global.STTRMModel(modelGr);
+    var result = model.evaluateTransition(previousState, current);
+    if (!result.transition_available) {
+        var msg = gs.getMessage("Model '{0}' prevented state transition from {1} to {2}",
+            [modelGr.getDisplayValue('name'), previous.getDisplayValue(stateField), current.getDisplayValue(stateField)]);
+        if (result.conditions) {
+            var failed = result.conditions
+                .filter(function (c) { return !c.passed && c.condition && c.condition.name; })
+                .map(function (c) { return c.condition.name; });
+            if (failed.length) {
+                msg = gs.getMessage("Model '{0}' prevented state transition from {1} to {2} because these transition conditions failed: {3}",
+                    [modelGr.getDisplayValue('name'), previous.getDisplayValue(stateField), current.getDisplayValue(stateField), failed.join(', ')]);
+            }
+        }
+        gs.addErrorMessage(msg);
+        current.setAbortAction(true);
+    }
+})(current, previous);`,
+})
+
+BusinessRule({
+    $id: Now.ID['enforce_found_item_transitions'],
+    name: 'Found Item: Check State Transition',
+    table: 'x_1927922_campus_l_found_item',
+    when: 'before',
+    action: ['update'],
+    filterCondition: 'stateVALCHANGES^EQ',
+    order: 50,
+    script: `(function executeRule(current, previous) {
+    if (!previous) return;
+
+    var modelGr = new GlideRecord('sttrm_model');
+    modelGr.addQuery('table_name', current.getTableName());
+    modelGr.addActiveQuery();
+    modelGr.orderBy('order');
+    modelGr.setLimit(1);
+    modelGr.query();
+    if (!modelGr.next()) return;
+
+    var stateField = modelGr.getValue('state_field');
+    var previousState = previous.getValue(stateField);
+    var currentState = current.getValue(stateField);
+    if (previousState === currentState) return;
+
+    var model = new global.STTRMModel(modelGr);
+    var result = model.evaluateTransition(previousState, current);
+    if (!result.transition_available) {
+        var msg = gs.getMessage("Model '{0}' prevented state transition from {1} to {2}",
+            [modelGr.getDisplayValue('name'), previous.getDisplayValue(stateField), current.getDisplayValue(stateField)]);
+        if (result.conditions) {
+            var failed = result.conditions
+                .filter(function (c) { return !c.passed && c.condition && c.condition.name; })
+                .map(function (c) { return c.condition.name; });
+            if (failed.length) {
+                msg = gs.getMessage("Model '{0}' prevented state transition from {1} to {2} because these transition conditions failed: {3}",
+                    [modelGr.getDisplayValue('name'), previous.getDisplayValue(stateField), current.getDisplayValue(stateField), failed.join(', ')]);
+            }
+        }
+        gs.addErrorMessage(msg);
+        current.setAbortAction(true);
+    }
+})(current, previous);`,
+})
+
+BusinessRule({
+    $id: Now.ID['enforce_match_transitions'],
+    name: 'Match: Check State Transition',
+    table: 'x_1927922_campus_l_match',
+    when: 'before',
+    action: ['update'],
+    filterCondition: 'stateVALCHANGES^EQ',
+    order: 50,
+    script: `(function executeRule(current, previous) {
+    if (!previous) return;
+
+    var modelGr = new GlideRecord('sttrm_model');
+    modelGr.addQuery('table_name', current.getTableName());
+    modelGr.addActiveQuery();
+    modelGr.orderBy('order');
+    modelGr.setLimit(1);
+    modelGr.query();
+    if (!modelGr.next()) return;
+
+    var stateField = modelGr.getValue('state_field');
+    var previousState = previous.getValue(stateField);
+    var currentState = current.getValue(stateField);
+    if (previousState === currentState) return;
+
+    var model = new global.STTRMModel(modelGr);
+    var result = model.evaluateTransition(previousState, current);
+    if (!result.transition_available) {
+        var msg = gs.getMessage("Model '{0}' prevented state transition from {1} to {2}",
+            [modelGr.getDisplayValue('name'), previous.getDisplayValue(stateField), current.getDisplayValue(stateField)]);
+        if (result.conditions) {
+            var failed = result.conditions
+                .filter(function (c) { return !c.passed && c.condition && c.condition.name; })
+                .map(function (c) { return c.condition.name; });
+            if (failed.length) {
+                msg = gs.getMessage("Model '{0}' prevented state transition from {1} to {2} because these transition conditions failed: {3}",
+                    [modelGr.getDisplayValue('name'), previous.getDisplayValue(stateField), current.getDisplayValue(stateField), failed.join(', ')]);
+            }
+        }
+        gs.addErrorMessage(msg);
+        current.setAbortAction(true);
+    }
+})(current, previous);`,
+})
+
+BusinessRule({
+    $id: Now.ID['enforce_claim_transitions'],
+    name: 'Claim: Check State Transition',
+    table: 'x_1927922_campus_l_claim',
+    when: 'before',
+    action: ['update'],
+    filterCondition: 'stateVALCHANGES^EQ',
+    order: 50,
+    script: `(function executeRule(current, previous) {
+    if (!previous) return;
+
+    var modelGr = new GlideRecord('sttrm_model');
+    modelGr.addQuery('table_name', current.getTableName());
+    modelGr.addActiveQuery();
+    modelGr.orderBy('order');
+    modelGr.setLimit(1);
+    modelGr.query();
+    if (!modelGr.next()) return;
+
+    var stateField = modelGr.getValue('state_field');
+    var previousState = previous.getValue(stateField);
+    var currentState = current.getValue(stateField);
+    if (previousState === currentState) return;
+
+    var model = new global.STTRMModel(modelGr);
+    var result = model.evaluateTransition(previousState, current);
+    if (!result.transition_available) {
+        var msg = gs.getMessage("Model '{0}' prevented state transition from {1} to {2}",
+            [modelGr.getDisplayValue('name'), previous.getDisplayValue(stateField), current.getDisplayValue(stateField)]);
+        if (result.conditions) {
+            var failed = result.conditions
+                .filter(function (c) { return !c.passed && c.condition && c.condition.name; })
+                .map(function (c) { return c.condition.name; });
+            if (failed.length) {
+                msg = gs.getMessage("Model '{0}' prevented state transition from {1} to {2} because these transition conditions failed: {3}",
+                    [modelGr.getDisplayValue('name'), previous.getDisplayValue(stateField), current.getDisplayValue(stateField), failed.join(', ')]);
+            }
+        }
+        gs.addErrorMessage(msg);
+        current.setAbortAction(true);
+    }
+})(current, previous);`,
+})

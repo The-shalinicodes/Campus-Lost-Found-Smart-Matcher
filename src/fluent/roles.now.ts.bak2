@@ -1,0 +1,33 @@
+import { Role } from '@servicenow/sdk/core'
+
+// =============================================================================
+// Application Roles
+// =============================================================================
+
+/**
+ * Student role - Can report lost items, view their own matches, submit claims
+ */
+export const studentRole = Role({
+    name: 'x_1927922_campus_l.student',
+    description: 'Campus Lost & Found student. Can report lost items, view own matches, and submit claims.',
+})
+
+/**
+ * Desk Staff role - Can manage found items, process claims, review matches.
+ * Contains the student role (inherits all student permissions).
+ */
+export const deskStaffRole = Role({
+    name: 'x_1927922_campus_l.desk_staff',
+    description: 'Campus Lost & Found desk staff. Can manage found items, process claims, and review matches.',
+    containsRoles: [studentRole],
+})
+
+/**
+ * Admin role - Full access to all tables and configurations.
+ * Contains the desk_staff role (inherits all desk_staff and student permissions).
+ */
+export const adminRole = Role({
+    name: 'x_1927922_campus_l.admin',
+    description: 'Campus Lost & Found administrator. Full access to all tables and configurations.',
+    containsRoles: [deskStaffRole],
+})
