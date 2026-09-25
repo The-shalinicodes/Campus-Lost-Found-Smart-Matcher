@@ -1,0 +1,102 @@
+import '@servicenow/sdk/global'
+import { EmailNotification, Record } from '@servicenow/sdk/core'
+
+// =============================================================================
+// EMAIL SCRIPT: Dynamic Record Link Generator
+// =============================================================================
+Record({
+    $id: Now.ID['lf_record_link_script'],
+    table: 'sys_script_email',
+    data: {
+        name: 'Campus LF Record Link',
+        new_lines_to_html: false,
+        script: Now.include('../server/script-includes/campus-lf-record-link.js'),
+    },
+})
+
+// =============================================================================
+// NOTIFICATION 1: Match Found Notification
+// =============================================================================
+EmailNotification({
+    $id: Now.ID['match_found_notification'],
+    table: 'x_1927922_campus_l_match',
+    name: 'Campus LF - Match Found',
+    description: 'Notifies the lost item reporter when a potential match is found.',
+    triggerConditions: {
+        generationType: 'triggered',
+    },
+    recipientDetails: {
+        recipientFields: ['lost_item.reported_by'],
+        sendToCreator: false,
+    },
+    emailContent: {
+        subject: 'Potential Match Found for Your Lost Item ${lost_item.number}',
+        messageHtml: '<h2>Good News - A Potential Match Has Been Found!</h2><p>Hello ${lost_item.reported_by.name},</p><p>We may have found your lost item. Here are the details:</p><h3>Your Lost Item</h3><p><strong>Tracking Number:</strong> ${lost_item.number}</p><p><strong>Description:</strong> ${lost_item.short_description}</p><p><strong>Category:</strong> ${lost_item.category}</p><h3>Potential Match</h3><p><strong>Found Item:</strong> ${found_item.short_description}</p><p><strong>Found Location:</strong> ${found_item.found_location.name}</p><p><strong>Confidence Score:</strong> ${confidence_score}%</p><p><strong>Match Number:</strong> ${number}</p><h3>How to Claim</h3><p><strong>Your Claim Code:</strong> ${claim_code}</p><p><strong>Pickup Location:</strong> ${found_item.storage_location.name}, ${found_item.storage_location.building}</p><p>To claim this item, please visit the pickup location with your student ID and the claim code above, or submit a claim through the Lost and Found portal.</p><p><a href="${mail_script:Campus LF Record Link}" style="display:inline-block;padding:10px 20px;background-color:#0066cc;color:white;text-decoration:none;border-radius:4px;">View Match Details</a></p>',
+        importance: 'high',
+    },
+})
+
+// =============================================================================
+// NOTIFICATION 2: Claim Approved Notification
+// =============================================================================
+EmailNotification({
+    $id: Now.ID['claim_approved_notification'],
+    table: 'x_1927922_campus_l_claim',
+    name: 'Campus LF - Claim Approved',
+    description: 'Notifies the claimant when their claim is approved with pickup instructions.',
+    triggerConditions: {
+        generationType: 'triggered',
+    },
+    recipientDetails: {
+        recipientFields: ['claimant'],
+        sendToCreator: false,
+    },
+    emailContent: {
+        subject: 'Your Claim Has Been Approved - Pickup Instructions ${number}',
+        messageHtml: '<h2>Your Claim Has Been Approved!</h2><p>Hello ${claimant.name},</p><p>Great news! Your claim <strong>${number}</strong> has been approved. Please follow the instructions below to pick up your item.</p><h3>Pickup Details</h3><p><strong>Pickup Location:</strong> ${pickup_location.name}, ${pickup_location.building}</p><p><strong>Claim Code:</strong> ${claim_code}</p><h3>What to Bring</h3><p>Please bring the following when picking up your item:</p><p>- A valid student or employee ID</p><p>- Your claim code: <strong>${claim_code}</strong></p><p><strong>Important:</strong> Please pick up your item within 7 business days. After this period, the item may be returned to unclaimed inventory.</p><p><a href="${mail_script:Campus LF Record Link}" style="display:inline-block;padding:10px 20px;background-color:#0066cc;color:white;text-decoration:none;border-radius:4px;">View Claim Details</a></p>',
+    },
+})
+
+// =============================================================================
+// NOTIFICATION 3: Lost Item Confirmation
+// =============================================================================
+EmailNotification({
+    $id: Now.ID['lost_item_confirmation_notification'],
+    table: 'x_1927922_campus_l_lost_item',
+    name: 'Campus LF - Lost Item Report Confirmation',
+    description: 'Confirms receipt of a lost item report and provides the tracking number.',
+    triggerConditions: {
+        generationType: 'engine',
+        onRecordInsert: true,
+    },
+    recipientDetails: {
+        recipientFields: ['reported_by'],
+        sendToCreator: false,
+    },
+    emailContent: {
+        subject: 'Lost Item Report Received - ${number}',
+        messageHtml: '<h2>Your Lost Item Report Has Been Received</h2><p>Hello ${reported_by.name},</p><p>Thank you for reporting your lost item. We have logged your report and our Smart Matching system will begin scanning found items immediately.</p><h3>Report Details</h3><p><strong>Tracking Number:</strong> ${number}</p><p><strong>Item:</strong> ${short_description}</p><p><strong>Category:</strong> ${category}</p><p><strong>Last Seen Location:</strong> ${last_seen_location.name}</p><p><strong>Date Last Seen:</strong> ${last_seen_date}</p><p><strong>Status:</strong> ${state}</p><h3>What Happens Next</h3><p>Our Smart Matching engine will automatically scan all found items for potential matches. You will be notified immediately if a match is found. You can check the status of your report at any time using your tracking number.</p><p><a href="${mail_script:Campus LF Record Link}" style="display:inline-block;padding:10px 20px;background-color:#0066cc;color:white;text-decoration:none;border-radius:4px;">View Your Report</a></p>',
+    },
+})
+
+// =============================================================================
+// NOTIFICATION 4: Found Item Logged Confirmation
+// =============================================================================
+EmailNotification({
+    $id: Now.ID['found_item_logged_notification'],
+    table: 'x_1927922_campus_l_found_item',
+    name: 'Campus LF - Found Item Logged',
+    description: 'Confirms that a found item has been logged and the matching engine is searching for its owner.',
+    triggerConditions: {
+        generationType: 'engine',
+        onRecordInsert: true,
+    },
+    recipientDetails: {
+        recipientFields: ['found_by'],
+        sendToCreator: false,
+    },
+    emailContent: {
+        subject: 'Found Item Successfully Logged - ${number}',
+        messageHtml: '<h2>Thank You for Turning In a Found Item</h2><p>Hello ${found_by.name},</p><p>The found item you reported has been successfully logged in our system. Our Smart Matching engine will now search for potential owners.</p><h3>Item Details</h3><p><strong>Tracking Number:</strong> ${number}</p><p><strong>Description:</strong> ${short_description}</p><p><strong>Category:</strong> ${category}</p><p><strong>Found Location:</strong> ${found_location.name}</p><p><strong>Storage Location:</strong> ${storage_location.name}</p><p>Thank you for helping reunite this item with its owner!</p><p><a href="${mail_script:Campus LF Record Link}" style="display:inline-block;padding:10px 20px;background-color:#0066cc;color:white;text-decoration:none;border-radius:4px;">View Item Record</a></p>',
+    },
+})

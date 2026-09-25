@@ -1,0 +1,42 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "serialNumber": "urn:uuid:660a9c09-6c93-4339-b1f8-88aa6c4c5592",
+  "metadata": {
+    "timestamp": "2026-09-24T15:41:43.089Z",
+    "tools": {
+      "components": [
+        {
+          "type": "library",
+          "name": "sdk-build-plugins",
+          "group": "@servicenow",
+          "version": "4.13.0",
+          "author": "ServiceNow"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "name": "x-1927922-campus-lost-and-found",
+      "version": "1.0.0",
+      "bom-ref": "pkg:servicenow/x-1927922-campus-lost-and-found@1.0.0?sys_scope_id=3b87e4d18363471057afc265eeaad375",
+      "description": "[BUILD AGENT GENERATED]:  Centralized and digitized end-to-end lost and found lifecycle with AI-powered classification, automated matching engine, and self-service tracking for campus environments. Features include mobile intake forms, document intelligence for image/text recognition, confidence-based match scoring, automated notifications, and an administrator dashboard for real-time inventory management.",
+      "licenses": [
+        {
+          "license": {
+            "name": "UNLICENSED"
+          }
+        }
+      ],
+      "purl": "pkg:servicenow/x-1927922-campus-lost-and-found@1.0.0?sys_scope_id=3b87e4d18363471057afc265eeaad375"
+    }
+  },
+  "components": [],
+  "dependencies": [
+    {
+      "ref": "pkg:servicenow/x-1927922-campus-lost-and-found@1.0.0?sys_scope_id=3b87e4d18363471057afc265eeaad375"
+    }
+  ]
+}
